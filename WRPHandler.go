@@ -55,8 +55,10 @@ func wrpRouterHandler(logger *zap.Logger, router device.Router, ctxlogger func(c
 			errorLogger = logger
 		}
 
+		logger.Debug("sending request to CPE")
 		// deviceRequest carries the context through the routing infrastructure
 		deviceResponse, err := router.Route(deviceRequest.WithContext(r.Context()))
+		logger.Debug("got response from CPE")
 
 		if err != nil {
 			code := http.StatusGatewayTimeout

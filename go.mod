@@ -1,6 +1,9 @@
 module github.com/xmidt-org/talaria
 
 go 1.21
+replace (
+	github.com/xmidt-org/webpa-common/v2  => ../webpa-common
+)
 
 require (
 	github.com/fatih/structs v1.1.0
@@ -21,7 +24,7 @@ require (
 	github.com/xmidt-org/clortho v0.0.4
 	github.com/xmidt-org/sallust v0.2.2
 	github.com/xmidt-org/touchstone v0.1.3
-	github.com/xmidt-org/webpa-common/v2 v2.2.2
+	 // github.com/xmidt-org/webpa-common/v2 v2.2.2
 	github.com/xmidt-org/wrp-go/v3 v3.2.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.40.0
 	go.uber.org/zap v1.26.0
