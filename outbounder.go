@@ -13,7 +13,6 @@ import (
 	"github.com/xmidt-org/webpa-common/v2/event"
 	"go.uber.org/zap"
 
-	// nolint:staticcheck
 	"github.com/xmidt-org/webpa-common/v2/xresolver"
 	"github.com/xmidt-org/webpa-common/v2/xresolver/consul"
 )
