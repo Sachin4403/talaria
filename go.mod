@@ -2,7 +2,7 @@ module github.com/xmidt-org/talaria
 
 go 1.21
 replace (
-	github.com/xmidt-org/webpa-common/v2  => ../webpa-common
+	github.com/xmidt-org/webpa-common/v2  => ./webpa-common
 )
 
 require (
