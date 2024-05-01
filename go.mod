@@ -2,6 +2,8 @@ module github.com/xmidt-org/talaria
 
 go 1.21
 
+replace github.com/xmidt-org/webpa-common/v2 => ./webpa-common
+
 require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-kit/kit v0.13.0
