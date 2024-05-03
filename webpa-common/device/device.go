@@ -246,6 +246,9 @@ func (d *device) sendRequest(request *Request) error {
 // request's transaction key.  The result channel will receive the response from the
 // read pump.
 func (d *device) awaitResponse(request *Request, result <-chan *Response) (*Response, error) {
+	var (
+		transactionKey, _ = request.Transactional()
+	)
 	select {
 	case <-request.Context().Done():
 		return nil, request.Context().Err()
@@ -253,10 +256,10 @@ func (d *device) awaitResponse(request *Request, result <-chan *Response) (*Resp
 		return nil, ErrorDeviceClosed
 	case response := <-result:
 		if response == nil {
-			d.logger.Debug("git null response", zap.Any("mac", d.ID()))
+			d.logger.Debug("git null response", zap.Any("transactionKey", transactionKey))
 			return nil, ErrorTransactionCanceled
 		}
-		d.logger.Debug("git not null response", zap.Any("response", response), zap.Any("mac", d.id))
+		d.logger.Debug("git not null response", zap.Any("transactionKey", transactionKey))
 
 		return response, nil
 	}
@@ -272,7 +275,7 @@ func (d *device) Send(request *Request) (*Response, error) {
 		result                        <-chan *Response
 	)
 
-	d.logger.Debug("request is transactional", zap.Bool("transactional", transactional))
+	d.logger.Debug("request is transactional", zap.Bool("transactional", transactional), zap.String("transaction_id", transactionKey))
 	if transactional {
 		var err error
 		if result, err = d.transactions.Register(transactionKey); err != nil {
@@ -281,19 +284,19 @@ func (d *device) Send(request *Request) (*Response, error) {
 			return nil, err
 		}
 
-		d.logger.Debug("setting timeout for the request", zap.Any("mac", d.ID()))
+		d.logger.Debug("setting timeout for the request", zap.String("transaction_id", transactionKey))
 
 		// ensure that the transaction is cleared
 		defer d.transactions.Cancel(transactionKey)
 	}
 
-	d.logger.Debug("sending request to  the device", zap.Any("mac", d.ID()))
+	d.logger.Debug("sending request to  the device", zap.String("transaction_id", transactionKey))
 
 	if err := d.sendRequest(request); err != nil {
-		d.logger.Debug("error value is ", zap.Any("err", err.Error()))
+		d.logger.Debug("error value is ", zap.Any("err", err.Error()), zap.String("transaction_id", transactionKey))
 		return nil, err
 	}
-	d.logger.Debug("sent request to  the device now waiting for the response", zap.Any("mac", d.ID()))
+	d.logger.Debug("sent request to  the device now waiting for the response", zap.String("transaction_id", transactionKey))
 
 	if result == nil {
 		// if there is no pending transaction, we're done
