@@ -99,6 +99,7 @@ func (d *eventDispatcher) OnDeviceEvent(event *device.Event) {
 			contentType := event.Format.ContentType()
 			if strings.HasPrefix(destination, EventPrefix) {
 				eventType := destination[len(EventPrefix):]
+				d.errorLog.Info("printing the event", zap.Any("eventType", eventType))
 				if err := d.dispatchEvent(eventType, contentType, event.Contents); err != nil {
 					d.errorLog.Error("Error dispatching event", zap.Any("eventType", eventType), zap.Any("destination", destination), zap.Error(err))
 				}
