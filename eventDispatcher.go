@@ -101,15 +101,15 @@ func (d *eventDispatcher) OnDeviceEvent(event *device.Event) {
 				eventType := destination[len(EventPrefix):]
 				d.errorLog.Info("printing the event", zap.Any("eventType", eventType))
 				if err := d.dispatchEvent(eventType, contentType, event.Contents); err != nil {
-					d.errorLog.Error("Error dispatching event", zap.Any("eventType", eventType), zap.Any("destination", destination), zap.Error(err))
+					d.errorLog.Info("Error dispatching event", zap.Any("eventType", eventType), zap.Any("destination", destination), zap.Error(err))
 				}
 			} else if strings.HasPrefix(destination, DNSPrefix) {
 				unfilteredURL := destination[len(DNSPrefix):]
 				if err := d.dispatchTo(unfilteredURL, contentType, event.Contents); err != nil {
-					d.errorLog.Error("Error dispatching to endpoint", zap.Any("destination", destination), zap.Error(err))
+					d.errorLog.Info("Error dispatching to endpoint", zap.Any("destination", destination), zap.Error(err))
 				}
 			} else {
-				d.errorLog.Error("Unroutable destination", zap.Any("destination", destination))
+				d.errorLog.Info("Unroutable destination", zap.Any("destination", destination))
 			}
 		}
 	}
