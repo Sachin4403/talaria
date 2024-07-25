@@ -83,12 +83,14 @@ func (d *eventDispatcher) OnDeviceEvent(event *device.Event) {
 	switch event.Type {
 	case device.Connect:
 		eventType, message := newOnlineMessage(d.source, event.Device)
+		d.errorLog.Info("printing the event", zap.Any("eventType", eventType))
 		if err := d.encodeAndDispatchEvent(eventType, wrp.Msgpack, message); err != nil {
 			d.errorLog.Error("Error dispatching online event", zap.Any("eventType", eventType), zap.Any("destination", message.Destination), zap.Error(err))
 		}
 
 	case device.Disconnect:
 		eventType, message := newOfflineMessage(d.source, event.Device)
+		d.errorLog.Info("printing the event", zap.Any("eventType", eventType))
 		if err := d.encodeAndDispatchEvent(eventType, wrp.Msgpack, message); err != nil {
 			d.errorLog.Error("Error dispatching offline event", zap.Any("eventType", eventType), zap.Any("destination", message.Destination), zap.Error(err))
 		}
