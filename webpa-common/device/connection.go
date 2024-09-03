@@ -72,7 +72,6 @@ func NewPinger(w Writer, pings xmetrics.Incrementer, data []byte, deadline func(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Websocket prepared message: ", pm)
 
 	return func() error {
 		err := w.SetWriteDeadline(deadline())
@@ -81,6 +80,7 @@ func NewPinger(w Writer, pings xmetrics.Incrementer, data []byte, deadline func(
 			return err
 		}
 
+		fmt.Println("Timestamp when writing prepared message:", time.Now(), " for device ID", string(data))
 		err = w.WritePreparedMessage(pm)
 		if err != nil {
 			fmt.Println("Error while writing prepared message: ", err)
@@ -89,6 +89,7 @@ func NewPinger(w Writer, pings xmetrics.Incrementer, data []byte, deadline func(
 
 		// only incrememt when the complete ping operation was successful
 		pings.Inc()
+		fmt.Println("Timestamp when ping was successful:", time.Now(), " for device ID", string(data))
 		fmt.Println("Ping was successfull")
 		return nil
 	}, nil
@@ -99,6 +100,7 @@ func NewPinger(w Writer, pings xmetrics.Incrementer, data []byte, deadline func(
 func SetPongHandler(r Reader, pongs xmetrics.Incrementer, deadline func() time.Time) {
 	r.SetPongHandler(func(pongMessage string) error {
 		fmt.Println("This is the pong message: ", pongMessage)
+		fmt.Println("Timestamp in pong handler:", time.Now(), " for device ID", pongMessage)
 		// increment up front, as this function is only called when a pong is actually received
 		pongs.Inc()
 		return r.SetReadDeadline(deadline())
