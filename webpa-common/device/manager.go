@@ -544,9 +544,16 @@ func (m *manager) writePump(d *device, w WriteCloser, pinger func() error, close
 		case envelope = <-d.messages:
 			var frameContents []byte
 			// nolint: typecheck
+			fmt.Println("Envelope contents: ", envelope)
+
+			fmt.Println("Envelope request contents: ", string(envelope.request.Contents))
+			fmt.Println("Envelope frame contents: ", envelope.request.Message)
+			fmt.Println("Envelope frame contents with message type string method being called: ", envelope.request.Message.MessageType().String())
 			if envelope.request.Format == wrp.Msgpack && len(envelope.request.Contents) > 0 {
+				fmt.Println("Inside if condition of writePump")
 				frameContents = envelope.request.Contents
 			} else {
+				fmt.Println("Inside else condition of writePump where we are resetting the frame contents.")
 				// if the request was in a format other than Msgpack, or if the caller did not pass
 				// Contents, then do the encoding here.
 				encoder.ResetBytes(&frameContents)
