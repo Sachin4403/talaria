@@ -386,6 +386,8 @@ func (m *manager) readPump(d *device, r ReadCloser, closeOnce *sync.Once) {
 
 	for {
 		messageType, data, readError := r.ReadMessage()
+		fmt.Println("Message received from the CPE: ", string(data))
+		fmt.Println("Message type received from the CPE: ", messageType)
 		if readError != nil {
 			d.logger.Error("read error", zap.Error(readError))
 			return
