@@ -114,6 +114,9 @@ type instrumentedReader struct {
 
 func (ir *instrumentedReader) ReadMessage() (int, []byte, error) {
 	messageType, data, err := ir.ReadCloser.ReadMessage()
+	fmt.Println("Read message type: ", messageType)
+	fmt.Println("Read message data: ", string(data))
+	fmt.Println("Read message bytes received: ", len(data))
 	if err == nil {
 		ir.statistics.AddBytesReceived(len(data))
 		ir.statistics.AddMessagesReceived(1)
@@ -132,6 +135,9 @@ type instrumentedWriter struct {
 }
 
 func (iw *instrumentedWriter) WriteMessage(messageType int, data []byte) error {
+	fmt.Println("Read message type: ", messageType)
+	fmt.Println("Read message data: ", string(data))
+	fmt.Println("Read message bytes received: ", len(data))
 	err := iw.WriteCloser.WriteMessage(messageType, data)
 	if err != nil {
 		return err
