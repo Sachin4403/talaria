@@ -123,6 +123,7 @@ func (d *eventDispatcher) OnDeviceEvent(event *device.Event) {
 
 	case device.Disconnect:
 		eventType, message = newOfflineMessage(d.source, event.Device)
+		d.logger.Info("Triggering device disconnect with offline message", zap.Any("offline message", string(message.Payload)))
 		url, err = d.encodeAndDispatchEvent(eventType, wrp.Msgpack, message)
 		if err != nil {
 			d.logger.Error("Error dispatching offline event", zap.Any("eventType", eventType), zap.Any("destination", message.Destination), zap.Error(err))
