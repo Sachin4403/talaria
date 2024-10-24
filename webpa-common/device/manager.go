@@ -209,6 +209,13 @@ func (m *manager) Connect(response http.ResponseWriter, request *http.Request, r
 		Logger:     m.logger,
 	})
 
+	// Check if an existing device connection with the same ID exists
+	existingDevice, ok := m.devices.get(d.id)
+	if ok {
+		m.logger.Info("existing connection found, closing", zap.String("deviceID", string(existingDevice.id)))
+		m.devices.remove(d.id, CloseReason{Text: "existing connection found, closing for id " + string(existingDevice.id)})
+	}
+
 	if allow, matchResults := m.filter.AllowConnection(d); !allow {
 		d.logger.Info("filter match found", zap.String("location", matchResults.Location), zap.String("key", matchResults.Key))
 		return nil, ErrorDeviceFilteredOut
