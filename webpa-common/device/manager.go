@@ -209,12 +209,12 @@ func (m *manager) Connect(response http.ResponseWriter, request *http.Request, r
 		Logger:     m.logger,
 	})
 
-	// Check if an existing device connection with the same ID exists
-	existingDevice, ok := m.devices.get(d.id)
-	if ok {
-		m.logger.Info("existing connection found, closing", zap.String("deviceID", string(existingDevice.id)))
-		m.devices.remove(d.id, CloseReason{Text: "existing connection found, closing for id " + string(existingDevice.id)})
-	}
+	// // Check if an existing device connection with the same ID exists
+	// existingDevice, ok := m.devices.get(d.id)
+	// if ok {
+	// 	m.logger.Info("existing connection found, closing", zap.String("deviceID", string(existingDevice.id)))
+	// 	m.devices.remove(d.id, CloseReason{Text: "existing connection found, closing for id " + string(existingDevice.id)})
+	// }
 
 	if allow, matchResults := m.filter.AllowConnection(d); !allow {
 		d.logger.Info("filter match found", zap.String("location", matchResults.Location), zap.String("key", matchResults.Key))
@@ -300,7 +300,13 @@ func (m *manager) dispatch(e *Event) {
 // at the time of pump closure.
 func (m *manager) pumpClose(d *device, c io.Closer, reason CloseReason) {
 	// remove will invoke requestClose()
-	m.devices.remove(d.id, reason)
+	// m.devices.remove(d.id, reason)
+
+	if !m.isDeviceDuplicated(d) {
+		// remove will invoke requestClose()
+		m.logger.Info("existing connection found, closing", zap.String("deviceID", string(d.id)))
+		m.devices.remove(d.id, reason)
+	}
 
 	closeError := c.Close()
 
@@ -316,6 +322,14 @@ func (m *manager) pumpClose(d *device, c io.Closer, reason CloseReason) {
 		},
 	)
 	d.conveyClosure()
+}
+
+func (m *manager) isDeviceDuplicated(d *device) bool {
+	existing, ok := m.devices.get(d.id)
+	if !ok {
+		return false
+	}
+	return existing.state != d.state
 }
 
 // nolint: typecheck
