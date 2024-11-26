@@ -35,6 +35,7 @@ func statusMetadata(d device.Interface) map[string]string {
 	} else {
 		metadata["/compliance"] = convey.MissingFields.String()
 	}
+	metadata["hw-mac"] = string(d.ID())
 
 	return metadata
 }
