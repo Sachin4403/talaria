@@ -37,6 +37,8 @@ func statusMetadata(d device.Interface) map[string]string {
 		metadata["/compliance"] = convey.MissingFields.String()
 	}
 
+	fmt.Println("This is the convey data", d.Convey())
+
 	mac := string(d.ID())
 	if strings.HasPrefix(mac, "mac:") {
 		mac = strings.TrimPrefix(mac, "mac:")
