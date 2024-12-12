@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xmidt-org/webpa-common/v2/convey"
@@ -36,8 +37,7 @@ func statusMetadata(d device.Interface) map[string]string {
 		metadata["/compliance"] = convey.MissingFields.String()
 	}
 
-	fmt.Println("This is the mac addres: ", string(d.ID()))
-	metadata["hw-mac"] = string(d.ID())
+	metadata["hw-mac"] = strings.TrimPrefix(string(d.ID()), "mac:")
 	return metadata
 }
 
