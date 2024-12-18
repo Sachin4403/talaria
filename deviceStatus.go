@@ -15,6 +15,7 @@ import (
 )
 
 func statusMetadata(d device.Interface) map[string]string {
+	fmt.Println("This is the convey map: ", d.Convey())
 	metadata, allFieldsPresent := wrpmeta.NewBuilder().Apply(
 		d.Convey(),
 		wrpmeta.Field{From: "boot-time", To: "/boot-time"},
@@ -27,7 +28,8 @@ func statusMetadata(d device.Interface) map[string]string {
 		wrpmeta.Field{From: "webpa-last-reconnect-reason", To: "/last-reconnect-reason"},
 		wrpmeta.Field{From: "webpa-protocol", To: "/protocol"},
 		wrpmeta.Field{From: "webpa-interface-used", To: "/interface-used"},
-		wrpmeta.Field{From: "boot-time-retry-wait", To: "/boot-time-retry-wait"}).
+		wrpmeta.Field{From: "boot-time-retry-wait", To: "/boot-time-retry-wait"},
+		wrpmeta.Field{From: "webpa-interface-label", To: "/webpa-interface-label"}).
 		Set("/trust", strconv.Itoa(d.Metadata().TrustClaim())).
 		Build()
 
@@ -38,6 +40,7 @@ func statusMetadata(d device.Interface) map[string]string {
 	}
 
 	metadata["hw-mac"] = strings.TrimPrefix(string(d.ID()), "mac:")
+	fmt.Println("This is the metadata: ", metadata)
 	return metadata
 }
 
