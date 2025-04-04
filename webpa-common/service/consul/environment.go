@@ -154,10 +154,11 @@ func newInstancers(l *zap.Logger, c Client, co Options) (i service.Instancers, e
 
 func newRegistrars(l *adapter.Logger, registrationScheme string, c gokitconsul.Client, u ttlUpdater, co Options) (r service.Registrars, closer func() error, err error) {
 	var consulRegistrar sd.Registrar
+	l.Logger.Info("starting service registration")
 	for _, registration := range co.registrations() {
 		instance := service.FormatInstance(registrationScheme, registration.Address, registration.Port)
 		if r.Has(instance) {
-			l.Logger.Warn("skipping duplicate registration", zap.String("instance", instance))
+			l.Logger.Info("skipping duplicate registration", zap.String("instance", instance))
 			continue
 		}
 
@@ -168,11 +169,15 @@ func newRegistrars(l *adapter.Logger, registrationScheme string, c gokitconsul.C
 		in := zap.String("instance", instance)
 		l.Logger = l.Logger.With(rid, in)
 		consulRegistrar, err = NewRegistrar(c, u, &registration, l)
+		l.Logger.Info("registered", zap.String("talaria_instance", instance))
 		if err != nil {
+			l.Logger.Info("error", zap.String("talaria_instance", instance), zap.Error(err))
 			return
 		}
 		r.Add(instance, consulRegistrar)
 	}
+	l.Logger.Info("service registration completed")
+
 	return
 }
 
