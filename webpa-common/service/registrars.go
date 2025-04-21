@@ -13,6 +13,7 @@ func (r Registrars) Register() {
 	for k, v := range r {
 		fmt.Printf("Register with %s ", k)
 		v.Register()
+		fmt.Printf("Registered with %s ", k)
 	}
 }
 
@@ -20,6 +21,7 @@ func (r Registrars) Deregister() {
 	for k, v := range r {
 		fmt.Printf("Deregister with %s ", k)
 		v.Deregister()
+		fmt.Printf("Deregistered with %s ", k)
 	}
 }
 
