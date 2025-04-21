@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/go-kit/kit/sd"
 )
 
@@ -9,13 +10,15 @@ import (
 type Registrars map[string]sd.Registrar
 
 func (r Registrars) Register() {
-	for _, v := range r {
+	for k, v := range r {
+		fmt.Printf("Register with %s ", k)
 		v.Register()
 	}
 }
 
 func (r Registrars) Deregister() {
-	for _, v := range r {
+	for k, v := range r {
+		fmt.Printf("Deregister with %s ", k)
 		v.Deregister()
 	}
 }
