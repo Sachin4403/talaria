@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -82,6 +83,7 @@ func WithRegistrars(r Registrars) Option {
 // discovered services.
 func WithInstancers(i Instancers) Option {
 	return func(e *environment) {
+		fmt.Println("instancers list", i)
 		e.instancers = i.Copy()
 	}
 }

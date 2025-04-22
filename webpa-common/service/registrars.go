@@ -26,11 +26,18 @@ func (r Registrars) Deregister() {
 }
 
 func (r Registrars) Has(key string) bool {
+	for k, v := range r {
+		fmt.Printf("registrars %s", k)
+		fmt.Println(v)
+	}
+	fmt.Println("end registrars ")
+
 	_, ok := r[key]
 	return ok
 }
 
 func (r Registrars) Len() int {
+	fmt.Println("length of registrars", len(r))
 	return len(r)
 }
 
