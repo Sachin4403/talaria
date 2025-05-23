@@ -31,7 +31,6 @@ _main() {
             echo "Building out template for file"
             /bin/spruce merge /tmp/talaria_spruce.yaml > /etc/talaria/talaria.yaml
         fi
-        sed -i 's/\${HOSTNAME}/$HOSTNAME/g' /etc/talaria/talaria.yaml
     fi
 
     exec "$@"
