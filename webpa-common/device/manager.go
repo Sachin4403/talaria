@@ -235,6 +235,7 @@ func (m *manager) Connect(response http.ResponseWriter, request *http.Request, r
 		return nil, err
 	}
 
+	fmt.Println("Adding new device to map: ", d.ID())
 	if err := m.devices.add(d); err != nil {
 		d.logger.Error("unable to register device", zap.Error(err))
 		c.Close()
