@@ -123,10 +123,11 @@ func (d *eventDispatcher) send(parent context.Context, request *http.Request) er
 	// increment the queue size first, so that we always keep a positive queue size
 	d.queueSize.Add(1.0)
 	ctx, cancel := context.WithTimeout(parent, d.timeout)
-	fmt.Println("Event received at Talaria: ", request)
+	bodyBytes, _ := io.ReadAll(request.Body)
+	fmt.Println("Event received at Talaria: ", string(bodyBytes))
 	select {
 	case d.outbounds <- outboundEnvelope{request.WithContext(ctx), cancel}:
-		fmt.Println("Event added to Talaria outbound queue: ", request)
+		fmt.Println("Event added to Talaria outbound queue: ", string(bodyBytes))
 		return nil
 
 	default:
