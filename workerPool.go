@@ -55,12 +55,14 @@ func (wp *WorkerPool) transact(e outboundEnvelope) {
 
 	// bail out early if the request has been on the queue too long
 	if err := e.request.Context().Err(); err != nil {
+		fmt.Println("Outbound message expired while on queue", err)
 		wp.logger.Error("Outbound message expired while on queue", zap.Error(err))
 		return
 	}
 
 	response, err := wp.transactor(e.request)
 	if err != nil {
+		fmt.Println("HTTP transaction error", err)
 		wp.logger.Error("HTTP transaction error", zap.Error(err))
 		return
 	}
@@ -80,7 +82,7 @@ func (wp *WorkerPool) transact(e outboundEnvelope) {
 func (wp *WorkerPool) worker() {
 	for e := range wp.outbounds {
 		wp.queueSize.Add(-1.0)
-		fmt.Println("Event processing by worker at Talaria: ", e.request.RequestURI, e.request.Context())
+		fmt.Println("Event processing by worker at Talaria: ", e.request.URL, e.request.Context())
 		wp.transact(e)
 	}
 }
