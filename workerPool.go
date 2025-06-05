@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -79,6 +80,7 @@ func (wp *WorkerPool) transact(e outboundEnvelope) {
 func (wp *WorkerPool) worker() {
 	for e := range wp.outbounds {
 		wp.queueSize.Add(-1.0)
+		fmt.Println("Event processing by worker at Talaria: ", e.request)
 		wp.transact(e)
 	}
 }
