@@ -80,8 +80,7 @@ func (wp *WorkerPool) transact(e outboundEnvelope) {
 func (wp *WorkerPool) worker() {
 	for e := range wp.outbounds {
 		wp.queueSize.Add(-1.0)
-		bodyBytes, _ := io.ReadAll(e.request.Body)
-		fmt.Println("Event processing by worker at Talaria: ", string(bodyBytes))
+		fmt.Println("Event processing by worker at Talaria: ", e.request.Context())
 		wp.transact(e)
 	}
 }

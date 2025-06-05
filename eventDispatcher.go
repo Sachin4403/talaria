@@ -131,6 +131,7 @@ func (d *eventDispatcher) send(parent context.Context, request *http.Request) er
 		return nil
 
 	default:
+		fmt.Println("Event dropped at Talaria: ", string(bodyBytes))
 		d.queueSize.Add(-1.0) // the message never made it to the queue
 		d.droppedMessages.Add(1.0)
 		return ErrOutboundQueueFull
