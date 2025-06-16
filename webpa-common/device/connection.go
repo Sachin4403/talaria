@@ -1,6 +1,7 @@
 package device
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -68,22 +69,28 @@ func NewDeadline(timeout time.Duration, now func() time.Time) func() time.Time {
 func NewPinger(w Writer, pings xmetrics.Incrementer, data []byte, deadline func() time.Time) (func() error, error) {
 	pm, err := websocket.NewPreparedMessage(websocket.PingMessage, data)
 	if err != nil {
+		fmt.Println("Failed to prepare WebSocket ping message", err)
 		return nil, err
 	}
 
 	return func() error {
+		fmt.Println("Setting write deadline for WebSocket ping")
 		err := w.SetWriteDeadline(deadline())
 		if err != nil {
+			fmt.Println("Failed to set write deadline for WebSocket ping", err)
 			return err
 		}
 
+		fmt.Println("Sending WebSocket ping message")
 		err = w.WritePreparedMessage(pm)
 		if err != nil {
+			fmt.Println("Failed to write WebSocket ping message", err)
 			return err
 		}
 
 		// only incrememt when the complete ping operation was successful
 		pings.Inc()
+		fmt.Println("WebSocket ping message sent successfully")
 		return nil
 	}, nil
 }
