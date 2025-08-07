@@ -211,9 +211,13 @@ func NewOutboundRoundTripper(om OutboundMeasures, o *Outbounder) http.RoundTripp
 	return promhttp.RoundTripperFunc(xhttp.RetryTransactor(
 		// use the default should retry predicate ...
 		xhttp.RetryOptions{
-			Logger:  o.logger(),
-			Retries: o.retries(),
-			Counter: om.Retries,
+			Logger:   o.logger(),
+			Retries:  3,
+			Interval: 10 * time.Millisecond,
+			Counter:  om.Retries,
+			ShouldRetryStatus: func(statusCode int) bool {
+				return statusCode < 200 || statusCode >= 300
+			},
 		},
 		InstrumentOutboundCounter(
 			om.RequestCounter,
