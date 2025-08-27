@@ -204,6 +204,8 @@ func (m *manager) Connect(response http.ResponseWriter, request *http.Request, r
 		Metadata:   metadata,
 		Logger:     m.logger,
 	})
+	fmt.Println("This is the X-REAL-IP header while extracting data from request headers")
+	d.ipAddress = request.Header.Get("X-REAL-IP")
 
 	if allow, matchResults := m.filter.AllowConnection(d); !allow {
 		d.logger.Info("filter match found", zap.String("location", matchResults.Location), zap.String("key", matchResults.Key))

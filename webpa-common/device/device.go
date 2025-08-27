@@ -97,6 +97,8 @@ type Interface interface {
 	// CloseReason returns the metadata explaining why a device was closed.  If this device
 	// is not closed, this method's return is undefined.
 	CloseReason() CloseReason
+
+	IpAddress() string
 }
 
 // device is the internal Interface implementation.  This type holds the internal
@@ -121,6 +123,8 @@ type device struct {
 	metadata *Metadata
 
 	closeReason atomic.Value
+
+	ipAddress string
 }
 
 type deviceOptions struct {
@@ -316,4 +320,8 @@ func (d *device) CloseReason() CloseReason {
 	}
 
 	return CloseReason{}
+}
+
+func (d *device) IpAddress() string {
+	return d.ipAddress
 }
