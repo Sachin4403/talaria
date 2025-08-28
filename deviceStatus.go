@@ -39,8 +39,7 @@ func statusMetadata(d device.Interface) map[string]string {
 	}
 
 	metadata["/hw-deviceid"] = string(d.ID())
-	fmt.Println("This is the ip address while population online metadata", d.IpAddress())
-	metadata["/ip-address"] = d.IpAddress()
+	metadata["/intermediate-context"] = d.IntermediateContext()
 	return metadata
 }
 

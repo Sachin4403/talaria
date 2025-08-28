@@ -204,9 +204,8 @@ func (m *manager) Connect(response http.ResponseWriter, request *http.Request, r
 		Metadata:   metadata,
 		Logger:     m.logger,
 	})
-	fmt.Println("These are all the request headers: ", request.Header)
-	fmt.Println("This is the X-REAL-IP header while extracting data from request headers", request.Header.Get("X-REAL-IP"))
-	d.ipAddress = request.Header.Get("X-REAL-IP")
+	fmt.Println("This is the X-Intermediate-Context header while extracting data from request headers", request.Header.Get("X-Intermediate-Context"))
+	d.intermediateContext = request.Header.Get("X-Intermediate-Context")
 
 	if allow, matchResults := m.filter.AllowConnection(d); !allow {
 		d.logger.Info("filter match found", zap.String("location", matchResults.Location), zap.String("key", matchResults.Key))

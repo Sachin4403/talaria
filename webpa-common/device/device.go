@@ -98,7 +98,7 @@ type Interface interface {
 	// is not closed, this method's return is undefined.
 	CloseReason() CloseReason
 
-	IpAddress() string
+	IntermediateContext() string
 }
 
 // device is the internal Interface implementation.  This type holds the internal
@@ -124,7 +124,7 @@ type device struct {
 
 	closeReason atomic.Value
 
-	ipAddress string
+	intermediateContext string
 }
 
 type deviceOptions struct {
@@ -322,6 +322,6 @@ func (d *device) CloseReason() CloseReason {
 	return CloseReason{}
 }
 
-func (d *device) IpAddress() string {
-	return d.ipAddress
+func (d *device) IntermediateContext() string {
+	return d.intermediateContext
 }
