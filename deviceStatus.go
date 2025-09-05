@@ -38,6 +38,7 @@ func statusMetadata(d device.Interface) map[string]string {
 	}
 
 	metadata["hw-mac"] = strings.TrimPrefix(string(d.ID()), "mac:")
+	metadata["/intermediate-context"] = d.IntermediateContext()
 	return metadata
 }
 
