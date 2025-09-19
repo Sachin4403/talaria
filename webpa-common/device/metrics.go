@@ -19,6 +19,7 @@ const (
 	DeviceLimitReachedCounter = "device_limit_reached_count"
 	ModelGauge                = "hardware_model"
 	WRPSourceCheck            = "wrp_source_check"
+	DuplicateDeviceCounter    = "duplicate_device_count"
 )
 
 // Metrics is the device module function that adds default device metrics
@@ -27,6 +28,10 @@ func Metrics() []xmetrics.Metric {
 		{
 			Name: DeviceCounter,
 			Type: "gauge",
+		},
+		{
+			Name: DuplicateDeviceCounter,
+			Type: "counter",
 		},
 		{
 			Name: DuplicatesCounter,
@@ -72,6 +77,7 @@ func Metrics() []xmetrics.Metric {
 // Measures is a convenient struct that holds all the device-related metric objects for runtime consumption.
 type Measures struct {
 	Device          xmetrics.Setter
+	DuplicateDevice metrics.Counter
 	LimitReached    xmetrics.Incrementer
 	Duplicates      xmetrics.Incrementer
 	RequestResponse metrics.Counter
@@ -87,6 +93,7 @@ type Measures struct {
 func NewMeasures(p provider.Provider) Measures {
 	return Measures{
 		Device:          p.NewGauge(DeviceCounter),
+		DuplicateDevice: p.NewCounter(DuplicateDeviceCounter),
 		LimitReached:    xmetrics.NewIncrementer(p.NewCounter(DeviceLimitReachedCounter)),
 		RequestResponse: p.NewCounter(RequestResponseCounter),
 		Ping:            xmetrics.NewIncrementer(p.NewCounter(PingCounter)),
