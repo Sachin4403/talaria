@@ -28,6 +28,7 @@ func statusMetadata(d device.Interface) map[string]string {
 		wrpmeta.Field{From: "webpa-protocol", To: "/protocol"},
 		wrpmeta.Field{From: "webpa-interface-used", To: "/interface-used"},
 		wrpmeta.Field{From: "webpa-interface-label", To: "/webpa-interface-label"},
+		wrpmeta.Field{From: "wan-ipv4-address", To: "/wan-ipv4-address"},
 		wrpmeta.Field{From: "boot-time-retry-wait", To: "/boot-time-retry-wait"}).
 		Set("/trust", strconv.Itoa(d.Metadata().TrustClaim())).
 		Build()
