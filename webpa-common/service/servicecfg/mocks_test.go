@@ -2,6 +2,7 @@ package servicecfg
 
 import (
 	"github.com/xmidt-org/webpa-common/v2/service/consul"
+	"github.com/xmidt-org/webpa-common/v2/service/k8s"
 	"github.com/xmidt-org/webpa-common/v2/service/zk"
 )
 
@@ -9,4 +10,6 @@ import (
 func resetEnvironmentFactories() {
 	zookeeperEnvironmentFactory = zk.NewEnvironment
 	consulEnvironmentFactory = consul.NewEnvironment
+	k8sInstancerFactory = k8s.NewK8sInstancer
+
 }
