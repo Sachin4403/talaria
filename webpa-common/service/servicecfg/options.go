@@ -3,7 +3,6 @@ package servicecfg
 import (
 	"github.com/xmidt-org/webpa-common/v2/service"
 	"github.com/xmidt-org/webpa-common/v2/service/consul"
-	"github.com/xmidt-org/webpa-common/v2/service/k8s"
 	"github.com/xmidt-org/webpa-common/v2/service/zk"
 )
 
@@ -16,7 +15,7 @@ type Options struct {
 	Fixed     []string        `json:"fixed,omitempty"`
 	Zookeeper *zk.Options     `json:"zookeeper,omitempty"`
 	Consul    *consul.Options `json:"consul,omitempty"`
-	K8s       *k8s.K8sOptions `json:"k8s,omitempty" yaml:"k8s,omitempty"`
+	K8s       *K8sOptions     `json:"k8s,omitempty" yaml:"k8s,omitempty"`
 }
 
 func (o *Options) vnodeCount() int {

@@ -7,7 +7,6 @@ import (
 	"github.com/xmidt-org/webpa-common/v2/adapter"
 	"github.com/xmidt-org/webpa-common/v2/service"
 	"github.com/xmidt-org/webpa-common/v2/service/consul"
-	"github.com/xmidt-org/webpa-common/v2/service/k8s"
 	"github.com/xmidt-org/webpa-common/v2/service/zk"
 	"github.com/xmidt-org/webpa-common/v2/xviper"
 	"go.uber.org/zap"
@@ -16,7 +15,7 @@ import (
 var (
 	zookeeperEnvironmentFactory = zk.NewEnvironment
 	consulEnvironmentFactory    = consul.NewEnvironment
-	k8sInstancerFactory         = k8s.NewK8sInstancer
+	k8sInstancerFactory         = NewK8sInstancer
 
 	errNoServiceDiscovery = errors.New("No service discovery configured")
 )
@@ -72,7 +71,7 @@ func NewEnvironment(l *adapter.Logger, u xviper.Unmarshaler, options ...service.
 		}
 		serviceName := o.K8s.ServiceName
 		if serviceName == "" {
-			serviceName = k8s.DefaultApplicationname
+			serviceName = DefaultApplicationname
 		}
 		return service.NewEnvironment(
 			append(eo,

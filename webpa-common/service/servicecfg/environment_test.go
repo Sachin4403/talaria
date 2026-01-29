@@ -16,7 +16,6 @@ import (
 	"github.com/xmidt-org/webpa-common/v2/adapter"
 	"github.com/xmidt-org/webpa-common/v2/service"
 	"github.com/xmidt-org/webpa-common/v2/service/consul"
-	"github.com/xmidt-org/webpa-common/v2/service/k8s"
 	"github.com/xmidt-org/webpa-common/v2/service/zk"
 	"github.com/xmidt-org/webpa-common/v2/xviper"
 )
@@ -247,10 +246,10 @@ func testNewEnvironmentK8s(t *testing.T) {
 	v.SetConfigType("json")
 	require.NoError(v.ReadConfig(configuration))
 
-	k8sInstancerFactory = func(l log.Logger, opts *k8s.K8sOptions) (sd.Instancer, error) {
+	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
 		assert.Equal(logger, l)
 		assert.Equal(
-			&k8s.K8sOptions{
+			&K8sOptions{
 				Namespace:     "default",
 				LabelSelector: "app=talaria",
 				ServiceName:   "talaria",
@@ -303,10 +302,10 @@ func testNewEnvironmentK8sPods(t *testing.T) {
 	v.SetConfigType("json")
 	require.NoError(v.ReadConfig(configuration))
 
-	k8sInstancerFactory = func(l log.Logger, opts *k8s.K8sOptions) (sd.Instancer, error) {
+	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
 		assert.Equal(logger, l)
 		assert.Equal(
-			&k8s.K8sOptions{
+			&K8sOptions{
 				Namespace:     "device-ns",
 				LabelSelector: "app=pods-service",
 				ServiceName:   "pods-service",
@@ -334,10 +333,10 @@ func testNewEnvironmentK8sPods(t *testing.T) {
 	require.True(ok)
 	assert.Equal("pods-service", ci.Metadata()["service"])
 
-	k8sMeta, ok := ci.Metadata()["k8s"].(*k8s.K8sOptions)
+	k8sMeta, ok := ci.Metadata()["k8s"].(*K8sOptions)
 	require.True(ok)
 	assert.Equal(
-		&k8s.K8sOptions{
+		&K8sOptions{
 			Namespace:     "device-ns",
 			LabelSelector: "app=pods-service",
 			ServiceName:   "pods-service",
@@ -376,10 +375,10 @@ func testNewEnvironmentK8sPodsDefaultService(t *testing.T) {
 	v.SetConfigType("json")
 	require.NoError(v.ReadConfig(configuration))
 
-	k8sInstancerFactory = func(l log.Logger, opts *k8s.K8sOptions) (sd.Instancer, error) {
+	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
 		assert.Equal(logger, l)
 		assert.Equal(
-			&k8s.K8sOptions{
+			&K8sOptions{
 				Namespace:     "default",
 				LabelSelector: "app=talaria",
 				EndpointType:  "pods",
@@ -401,7 +400,7 @@ func testNewEnvironmentK8sPodsDefaultService(t *testing.T) {
 
 	ci, ok := instancer.(service.ContextualInstancer)
 	require.True(ok)
-	assert.Equal(k8s.DefaultApplicationname, ci.Metadata()["service"])
+	assert.Equal(DefaultApplicationname, ci.Metadata()["service"])
 
 	assert.NoError(actualEnvironment.Close())
 }
