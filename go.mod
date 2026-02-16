@@ -27,8 +27,6 @@ require (
 	go.uber.org/zap v1.26.0
 )
 
-require sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-
 require (
 	emperror.dev/emperror v0.33.0 // indirect
 	emperror.dev/errors v0.8.1 // indirect
@@ -127,6 +125,7 @@ require (
 	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/fx v1.20.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.44.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
@@ -144,23 +143,27 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.29.0 // indirect
-	k8s.io/apimachinery v0.29.0 // indirect
+	k8s.io/api v0.35.0 // indirect
+	k8s.io/apimachinery v0.35.0 // indirect
 	k8s.io/client-go v8.0.0+incompatible // indirect
-	k8s.io/klog/v2 v2.110.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
-	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
-	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
+	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
+	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 replace (
+	// Pin gnostic-models to v0.6.8 (uses gopkg.in/yaml) to avoid yaml type conflict with kube-openapi v0.29
+	github.com/google/gnostic-models => github.com/google/gnostic-models v0.6.8
 	github.com/xmidt-org/webpa-common/v2 => ./webpa-common
 	k8s.io/api => k8s.io/api v0.29.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.29.0
 	k8s.io/client-go => k8s.io/client-go v0.29.0
-	go.yaml.in/yaml/v3 => gopkg.in/yaml.v3 v3.0.1
-
+	// Pin kube-openapi and utils to v0.29-compatible versions to avoid structured-merge-diff v4/v6 type conflict
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00
+	k8s.io/utils => k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
