@@ -6,13 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/sd"
-	"github.com/go-kit/log"
 	"github.com/hashicorp/consul/api"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xmidt-org/webpa-common/logging"
 	"github.com/xmidt-org/webpa-common/v2/adapter"
 	"github.com/xmidt-org/webpa-common/v2/service"
 	"github.com/xmidt-org/webpa-common/v2/service/consul"
@@ -217,201 +214,10 @@ func testNewEnvironmentConsul(t *testing.T) {
 	assert.Equal(expectedEnvironment, actualEnvironment)
 	assert.NoError(actualEnvironment.Close())
 }
-
-func testNewEnvironmentK8s(t *testing.T) {
-	defer resetEnvironmentFactories()
-
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		logger = logging.NewTestLogger(nil, t)
-		v      = viper.New()
-
-		configuration = strings.NewReader(`
-			{
-				"k8s": {
-					"namespace": "default",
-					"labelSelector": "app=talaria",
-					"serviceName": "talaria",
-					"inCluster": true,
-					"portName": "http",
-					"scheme": "https",
-					"endpointType": "endpoints"
-				}
-			}
-		`)
-	)
-
-	v.SetConfigType("json")
-	require.NoError(v.ReadConfig(configuration))
-
-	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
-		assert.Equal(logger, l)
-		assert.Equal(
-			&K8sOptions{
-				Namespace:     "default",
-				LabelSelector: "app=talaria",
-				ServiceName:   "talaria",
-				InCluster:     true,
-				PortName:      "http",
-				Scheme:        "https",
-				EndpointType:  "endpoints",
-			},
-			opts,
-		)
-		return sd.FixedInstancer([]string{"https://example.com:1234"}), nil
-	}
-
-	actualEnvironment, err := NewEnvironment(logger, v)
-	require.NoError(err)
-	require.NotNil(actualEnvironment)
-
-	instancers := actualEnvironment.Instancers()
-	assert.Len(instancers, 1)
-	assert.NotNil(instancers["k8s"])
-
-	assert.NoError(actualEnvironment.Close())
-}
-
-func testNewEnvironmentK8sPods(t *testing.T) {
-	defer resetEnvironmentFactories()
-
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		logger = logging.NewTestLogger(nil, t)
-		v      = viper.New()
-
-		configuration = strings.NewReader(`
-			{
-				"k8s": {
-					"namespace": "device-ns",
-					"labelSelector": "app=pods-service",
-					"serviceName": "pods-service",
-					"kubeconfig": "/tmp/kubeconfig",
-					"portName": "http",
-					"scheme": "http",
-					"endpointType": "pods"
-				}
-			}
-		`)
-	)
-
-	v.SetConfigType("json")
-	require.NoError(v.ReadConfig(configuration))
-
-	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
-		assert.Equal(logger, l)
-		assert.Equal(
-			&K8sOptions{
-				Namespace:     "device-ns",
-				LabelSelector: "app=pods-service",
-				ServiceName:   "pods-service",
-				Kubeconfig:    "/tmp/kubeconfig",
-				PortName:      "http",
-				Scheme:        "http",
-				EndpointType:  "pods",
-			},
-			opts,
-		)
-		return sd.FixedInstancer([]string{"http://example.com:1234"}), nil
-	}
-
-	actualEnvironment, err := NewEnvironment(logger, v)
-	require.NoError(err)
-	require.NotNil(actualEnvironment)
-
-	instancers := actualEnvironment.Instancers()
-	require.Len(instancers, 1)
-
-	instancer, ok := instancers["k8s"]
-	require.True(ok)
-
-	ci, ok := instancer.(service.ContextualInstancer)
-	require.True(ok)
-	assert.Equal("pods-service", ci.Metadata()["service"])
-
-	k8sMeta, ok := ci.Metadata()["k8s"].(*K8sOptions)
-	require.True(ok)
-	assert.Equal(
-		&K8sOptions{
-			Namespace:     "device-ns",
-			LabelSelector: "app=pods-service",
-			ServiceName:   "pods-service",
-			Kubeconfig:    "/tmp/kubeconfig",
-			PortName:      "http",
-			Scheme:        "http",
-			EndpointType:  "pods",
-		},
-		k8sMeta,
-	)
-
-	assert.NoError(actualEnvironment.Close())
-}
-
-func testNewEnvironmentK8sPodsDefaultService(t *testing.T) {
-	defer resetEnvironmentFactories()
-
-	var (
-		assert  = assert.New(t)
-		require = require.New(t)
-
-		logger = logging.NewTestLogger(nil, t)
-		v      = viper.New()
-
-		configuration = strings.NewReader(`
-			{
-				"k8s": {
-					"namespace": "default",
-					"labelSelector": "app=talaria",
-					"endpointType": "pods"
-				}
-			}
-		`)
-	)
-
-	v.SetConfigType("json")
-	require.NoError(v.ReadConfig(configuration))
-
-	k8sInstancerFactory = func(l log.Logger, opts *K8sOptions) (sd.Instancer, error) {
-		assert.Equal(logger, l)
-		assert.Equal(
-			&K8sOptions{
-				Namespace:     "default",
-				LabelSelector: "app=talaria",
-				EndpointType:  "pods",
-			},
-			opts,
-		)
-		return sd.FixedInstancer([]string{"http://example.com:1234"}), nil
-	}
-
-	actualEnvironment, err := NewEnvironment(logger, v)
-	require.NoError(err)
-	require.NotNil(actualEnvironment)
-
-	instancers := actualEnvironment.Instancers()
-	require.Len(instancers, 1)
-
-	instancer, ok := instancers["k8s"]
-	require.True(ok)
-
-	ci, ok := instancer.(service.ContextualInstancer)
-	require.True(ok)
-	assert.Equal(DefaultApplicationname, ci.Metadata()["service"])
-
-	assert.NoError(actualEnvironment.Close())
-}
-
 func TestNewEnvironment(t *testing.T) {
 	t.Run("Empty", testNewEnvironmentEmpty)
 	t.Run("UnmarshalError", testNewEnvironmentUnmarshalError)
 	t.Run("Fixed", testNewEnvironmentFixed)
 	t.Run("Zookeeper", testNewEnvironmentZookeeper)
 	t.Run("Consul", testNewEnvironmentConsul)
-	t.Run("K8s", testNewEnvironmentK8s)
-	t.Run("K8sPods", testNewEnvironmentK8sPods)
-	t.Run("K8sPodsDefaultService", testNewEnvironmentK8sPodsDefaultService)
 }

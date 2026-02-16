@@ -9,6 +9,4 @@ import (
 func resetEnvironmentFactories() {
 	zookeeperEnvironmentFactory = zk.NewEnvironment
 	consulEnvironmentFactory = consul.NewEnvironment
-	k8sInstancerFactory = NewK8sInstancer
-
 }

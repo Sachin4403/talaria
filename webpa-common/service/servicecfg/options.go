@@ -15,7 +15,7 @@ type Options struct {
 	Fixed     []string        `json:"fixed,omitempty"`
 	Zookeeper *zk.Options     `json:"zookeeper,omitempty"`
 	Consul    *consul.Options `json:"consul,omitempty"`
-	K8s       *K8sOptions     `json:"k8s,omitempty" yaml:"k8s,omitempty"`
+	K8s       *K8sOptions     `json:"k8s,omitempty"`
 }
 
 func (o *Options) vnodeCount() int {

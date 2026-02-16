@@ -1,198 +1,158 @@
+/**
+ * Copyright 2024 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package servicecfg
 
 import (
 	"fmt"
-	"net"
-	"sync"
-	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/sd"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
+	"github.com/xmidt-org/webpa-common/v2/adapter"
+	"github.com/xmidt-org/webpa-common/v2/service"
+	"go.uber.org/zap"
 )
 
-// k8sInstancer implements sd.Instancer for Kubernetes.
-type k8sInstancer struct {
-	mtx       sync.RWMutex
-	endpoints []string
-	logger    log.Logger
+// Environment is a Kubernetes-specific interface for the service discovery environment.
+// A primary use case is obtaining access to the underlying Kubernetes client for use
+// in direct API calls.
+type Environment interface {
+	service.Environment
 
-	subscribers map[chan<- sd.Event]struct{}
+	// Client returns the Kubernetes Client interface exposed by this package
+	Client() Client
 }
 
-func NewK8sInstancer(logger log.Logger, opts *K8sOptions) (sd.Instancer, error) {
-	if opts == nil {
-		return nil, fmt.Errorf("k8s options must not be nil")
+type environment struct {
+	service.Environment
+	client Client
+}
+
+func (e environment) Client() Client {
+	return e.client
+}
+
+// newInstancerKey creates a unique key for an instancer based on the watch configuration
+func newInstancerKey(w Watch) string {
+	namespace := w.namespace()
+	if w.AllNamespaces {
+		namespace = "all"
 	}
-	if opts.ServiceName == "" {
-		opts.ServiceName = DefaultApplicationname
-	}
+	return fmt.Sprintf("k8s:%s/%s{port=%s}", namespace, w.Service, w.PortName)
+}
 
-	cfg, err := buildK8sConfig(opts)
-	if err != nil {
-		return nil, err
-	}
+// newInstancers creates instancers for all configured watches
+func newInstancers(l *zap.Logger, c Client, o K8sOptions) (service.Instancers, error) {
+	var i service.Instancers
 
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("create k8s client: %w", err)
-	}
-
-	inst := &k8sInstancer{
-		logger:      logger,
-		subscribers: make(map[chan<- sd.Event]struct{}),
-	}
-
-	// Use shared informer to watch Endpoints or Pods
-	factory := newInformerFactory(clientset, opts)
-	informer := selectInformer(factory, opts)
-
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { inst.updateFromStore(informer.GetStore(), opts) },
-		UpdateFunc: func(oldObj, newObj interface{}) { inst.updateFromStore(informer.GetStore(), opts) },
-		DeleteFunc: func(obj interface{}) { inst.updateFromStore(informer.GetStore(), opts) },
-	})
-
-	stopCh := make(chan struct{})
-
-	go func() {
-		defer runtime.HandleCrash()
-		informer.Run(stopCh)
-	}()
-
-	// Wait for initial sync in a separate goroutine
-	go func() {
-		if !cache.WaitForCacheSync(stopCh, informer.HasSynced) {
-			_ = logger.Log("level", "error", "msg", "k8s informer cache sync failed")
-			return
+	for _, w := range o.watches() {
+		key := newInstancerKey(w)
+		if i.Has(key) {
+			l.Warn("skipping duplicate watch",
+				zap.String("service", w.Service),
+				zap.String("namespace", w.namespace()),
+				zap.String("portName", w.PortName),
+			)
+			continue
 		}
-		inst.updateFromStore(informer.GetStore(), opts)
-	}()
 
-	return inst, nil
-}
-
-func buildK8sConfig(opts *K8sOptions) (*rest.Config, error) {
-	if opts.InCluster {
-		return rest.InClusterConfig()
-	}
-	if opts.Kubeconfig != "" {
-		return clientcmd.BuildConfigFromFlags("", opts.Kubeconfig)
-	}
-	// Fallback to default rules
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	cfgOverrides := &clientcmd.ConfigOverrides{}
-	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, cfgOverrides).ClientConfig()
-}
-
-// newInformerFactory builds a shared informer factory filtered to the namespace and label selector.
-func newInformerFactory(clientset *kubernetes.Clientset, opts *K8sOptions) informers.SharedInformerFactory {
-	tweak := func(lo *metav1.ListOptions) {
-		if opts.LabelSelector != "" {
-			lo.LabelSelector = opts.LabelSelector
-		}
-	}
-	if opts.Namespace == "" {
-		return informers.NewSharedInformerFactoryWithOptions(clientset, 30*time.Second,
-			informers.WithTweakListOptions(tweak),
+		inst := service.NewContextualInstancer(
+			NewInstancer(InstancerOptions{
+				Client:       c,
+				Logger:       l,
+				Watch:        w,
+				ResyncPeriod: o.resyncPeriod(),
+			}),
+			map[string]interface{}{
+				"service":   w.Service,
+				"namespace": w.namespace(),
+				"portName":  w.PortName,
+				"scheme":    w.scheme(),
+			},
 		)
+		i.Set(key, inst)
 	}
-	return informers.NewSharedInformerFactoryWithOptions(clientset, 30*time.Second,
-		informers.WithNamespace(opts.Namespace),
-		informers.WithTweakListOptions(tweak),
-	)
+
+	return i, nil
 }
 
-// selectInformer chooses between pod or endpoint-based discovery.
-func selectInformer(factory informers.SharedInformerFactory, opts *K8sOptions) cache.SharedIndexInformer {
-	switch opts.EndpointType {
-	case "pods":
-		return factory.Core().V1().Pods().Informer()
-	default:
-		// default to Endpoints
-		return factory.Core().V1().Endpoints().Informer()
-	}
-}
+// newRegistrars creates registrars for all configured registrations
+func newRegistrars(l *zap.Logger, c Client, o K8sOptions) service.Registrars {
+	var r service.Registrars
 
-func (i *k8sInstancer) updateFromStore(store cache.Store, opts *K8sOptions) {
-	var eps []string
-
-	for _, obj := range store.List() {
-		switch o := obj.(type) {
-		case *corev1.Endpoints:
-			if o.Name != opts.ServiceName {
-				continue
-			}
-			for _, subset := range o.Subsets {
-				for _, addr := range subset.Addresses {
-					for _, port := range subset.Ports {
-						if opts.PortName != "" && port.Name != opts.PortName {
-							continue
-						}
-						host := addr.IP
-						if host == "" && addr.Hostname != "" {
-							host = addr.Hostname
-						}
-						if host == "" {
-							continue
-						}
-						scheme := opts.Scheme
-						if scheme == "" {
-							scheme = "http"
-						}
-						eps = append(eps, fmt.Sprintf("%s://%s:%d", scheme, net.JoinHostPort(host, fmt.Sprint(port.Port))))
-					}
-				}
-			}
-		case *corev1.Pod:
-			if opts.EndpointType != "pods" {
-				continue
-			}
-			// Pull pod IP and a known container port if desired
-			if o.Status.PodIP == "" {
-				continue
-			}
-			// Simplest case: one fixed port
-			port := 80
-			scheme := opts.Scheme
-			if scheme == "" {
-				scheme = "http"
-			}
-			eps = append(eps, fmt.Sprintf("%s://%s:%d", scheme, net.JoinHostPort(o.Status.PodIP, fmt.Sprint(port))))
+	for _, reg := range o.registrations() {
+		instance := service.FormatInstance(reg.scheme(), reg.Address, reg.port())
+		if r.Has(instance) {
+			l.Warn("skipping duplicate registration", zap.String("instance", instance))
+			continue
 		}
+
+		registrar := NewRegistrar(RegistrarOptions{
+			Client:       c,
+			Logger:       l,
+			Registration: reg,
+		})
+		r.Add(instance, registrar)
 	}
 
-	i.mtx.Lock()
-	i.endpoints = eps
-	for ch := range i.subscribers {
-		ch <- sd.Event{Instances: eps, Err: nil}
+	return r
+}
+
+// NewK8sEnvironment constructs a Kubernetes-based service.Environment using both
+// Kubernetes K8sOptions (typically unmarshaled from configuration) and an optional
+// extra set of environment options.
+func NewK8sEnvironment(l *adapter.Logger, o K8sOptions, eo ...service.Option) (Environment, error) {
+	if l == nil {
+		l = adapter.DefaultLogger()
 	}
-	i.mtx.Unlock()
-}
 
-// Implement sd.Instancer.
+	if len(o.Watches) == 0 && len(o.Registrations) == 0 {
+		return nil, service.ErrIncomplete
+	}
 
-func (i *k8sInstancer) Register(ch chan<- sd.Event) {
-	i.mtx.Lock()
-	i.subscribers[ch] = struct{}{}
-	// send initial state
-	ch <- sd.Event{Instances: i.endpoints, Err: nil}
-	i.mtx.Unlock()
-}
+	// Create Kubernetes client
+	client, err := clientFactory(o.Client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
 
-func (i *k8sInstancer) Deregister(ch chan<- sd.Event) {
-	i.mtx.Lock()
-	delete(i.subscribers, ch)
-	i.mtx.Unlock()
-}
+	// Create instancers for watching services
+	instancers, err := newInstancers(l.Logger, client, o)
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to create instancers: %w", err)
+	}
 
-func (i *k8sInstancer) Stop() {
-	// No-op if using shared factory; you can wire a stop channel if desired.
+	// Create registrars for service registration
+	registrars := newRegistrars(l.Logger, client, o)
+
+	// Create the base service environment
+	baseEnv := service.NewEnvironment(
+		append(
+			eo,
+			service.WithRegistrars(registrars),
+			service.WithInstancers(instancers),
+			service.WithCloser(func() error {
+				client.Close()
+				return nil
+			}),
+		)...,
+	)
+
+	return environment{
+		Environment: baseEnv,
+		client:      client,
+	}, nil
 }

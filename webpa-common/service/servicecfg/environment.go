@@ -15,7 +15,7 @@ import (
 var (
 	zookeeperEnvironmentFactory = zk.NewEnvironment
 	consulEnvironmentFactory    = consul.NewEnvironment
-	k8sInstancerFactory         = NewK8sInstancer
+	k8sEnvironmentFactory       = NewK8sEnvironment
 
 	errNoServiceDiscovery = errors.New("No service discovery configured")
 )
@@ -62,32 +62,9 @@ func NewEnvironment(l *adapter.Logger, u xviper.Unmarshaler, options ...service.
 		l.Logger.Info("using consul for service discovery")
 		return consulEnvironmentFactory(l, o.DefaultScheme, *o.Consul, eo...)
 	}
-
 	if o.K8s != nil {
 		l.Logger.Info("using k8s for service discovery")
-		instancer, err := k8sInstancerFactory(l, o.K8s)
-		if err != nil {
-			return nil, err
-		}
-		serviceName := o.K8s.ServiceName
-		if serviceName == "" {
-			serviceName = DefaultApplicationname
-		}
-		return service.NewEnvironment(
-			append(eo,
-				service.WithInstancers(
-					service.Instancers{
-						"k8s": service.NewContextualInstancer(
-							instancer,
-							map[string]interface{}{
-								"k8s":     o.K8s,
-								"service": serviceName,
-							},
-						),
-					},
-				),
-			)...,
-		), nil
+		return k8sEnvironmentFactory(l, *o.K8s, eo...)
 	}
 
 	return nil, errNoServiceDiscovery
