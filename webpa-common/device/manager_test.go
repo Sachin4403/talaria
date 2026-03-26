@@ -425,6 +425,86 @@ func TestGaugeCardinality(t *testing.T) {
 	})
 }
 
+func TestAddDeviceMetadataContext(t *testing.T) {
+	tests := []struct {
+		Name                       string
+		MessageType                wrp.MessageType
+		ExistingMetadata           map[string]string
+		IntermediateContext         string
+		ExpectIntermediateContext   bool
+		ExpectedIntermediateCtxVal string
+	}{
+		{
+			Name:                       "SimpleEvent with intermediateContext",
+			MessageType:                wrp.SimpleEventMessageType,
+			IntermediateContext:         "test-context-value",
+			ExpectIntermediateContext:   true,
+			ExpectedIntermediateCtxVal: "test-context-value",
+		},
+		{
+			Name:                       "SimpleEvent with intermediateContext and existing metadata",
+			MessageType:                wrp.SimpleEventMessageType,
+			ExistingMetadata:           map[string]string{"existing-key": "existing-value"},
+			IntermediateContext:         "test-context-value",
+			ExpectIntermediateContext:   true,
+			ExpectedIntermediateCtxVal: "test-context-value",
+		},
+		{
+			Name:                     "SimpleEvent with empty intermediateContext",
+			MessageType:              wrp.SimpleEventMessageType,
+			IntermediateContext:       "",
+			ExpectIntermediateContext: false,
+		},
+		{
+			Name:                       "Non-SimpleEvent with intermediateContext",
+			MessageType:                wrp.SimpleRequestResponseMessageType,
+			IntermediateContext:         "test-context-value",
+			ExpectIntermediateContext:   true,
+			ExpectedIntermediateCtxVal: "test-context-value",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			metadata := new(Metadata)
+			metadata.SetClaims(map[string]interface{}{
+				PartnerIDClaimKey: "partner-test",
+				TrustClaimKey:     0,
+			})
+			metadata.SetSessionID("test-session-id")
+
+			message := &wrp.Message{
+				Type:     tc.MessageType,
+				Metadata: tc.ExistingMetadata,
+			}
+
+			addDeviceMetadataContext(message, metadata, tc.IntermediateContext)
+
+			assert.Equal([]string{"partner-test"}, message.PartnerIDs)
+
+			if tc.MessageType == wrp.SimpleEventMessageType {
+				assert.Equal("test-session-id", message.SessionID)
+			}
+
+			if tc.ExpectIntermediateContext {
+				assert.NotNil(message.Metadata)
+				assert.Equal(tc.ExpectedIntermediateCtxVal, message.Metadata["/intermediate-context"])
+			} else {
+				if message.Metadata != nil {
+					_, exists := message.Metadata["/intermediate-context"]
+					assert.False(exists)
+				}
+			}
+
+			if tc.ExistingMetadata != nil {
+				assert.Equal("existing-value", message.Metadata["existing-key"])
+			}
+		})
+	}
+}
+
 func TestWRPSourceIsValid(t *testing.T) {
 	assert := assert.New(t)
 	canonicalID := ID("mac:112233445566")
